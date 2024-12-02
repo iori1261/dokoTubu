@@ -1,6 +1,7 @@
 package servlet;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import jakarta.servlet.RequestDispatcher;
@@ -51,6 +52,10 @@ public class Main extends HttpServlet {
             ServletContext application = this.getServletContext();
             List<Mutter> mutterList = (List<Mutter>) application.getAttribute("mutterList");
 
+            if (mutterList == null) {
+                mutterList = new ArrayList<>();
+            }
+
             // セッションスコープに保存されたユーザ情報を取得
             HttpSession session = request.getSession();
             User loginUser = (User) session.getAttribute("loginUser");
@@ -58,21 +63,24 @@ public class Main extends HttpServlet {
             // つぶやきを作成してつぶやきリストに追加
             Mutter mutter = new Mutter(loginUser.getName(), text);
             PostMutterLogic postMutterLogic = new PostMutterLogic();
-            postMutterLogic.execute(mutter);
+            postMutterLogic.execute(mutter);  // つぶやきをデータベースに保存
 
             // アプリケーションスコープにつぶやきリストを保存
-            application.setAttribute("mutterList", mutterList);
+            mutterList.add(mutter);  // リストに追加
+            application.setAttribute("mutterList", mutterList);  // アプリケーションスコープに保存
         } else {
             // エラーメッセージをリクエストスコープに保存
             request.setAttribute("errorMsg", "つぶやきが入力されていません");
         }
-        
-        //つぶやきリストを取得して、リクエストスコープに保存
+
+        // つぶやきリストを取得して、リクエストスコープに保存
         GetMutterListLogic getMutterListLogic = new GetMutterListLogic();
         List<Mutter> mutterList = getMutterListLogic.execute();
         request.setAttribute("mutterList", mutterList);
+
         // メイン画面にフォワード
         RequestDispatcher dispatcher = request.getRequestDispatcher("/WEB-INF/jsp/main.jsp");
         dispatcher.forward(request, response);
     }
+
 }
